@@ -7,9 +7,9 @@ public class StateMachineMovement : MonoBehaviour
 {
     public enum State
     {
-        FirstPerson,
-        Monocular,
-        MAX
+        Walk,
+        Crouch,
+        Sprint
     }
 
     [SerializeField] private State stateCurrent;
@@ -25,6 +25,7 @@ public class StateMachineMovement : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        stateCurrent = State.Walk;
         //get our components
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
@@ -41,38 +42,20 @@ public class StateMachineMovement : MonoBehaviour
         //depending on the current state, choose from a set of behcaour to follow
         switch (stateCurrent)
         {
-            case State.FirstPerson:
-                FirstState();
+            case State.Walk:
+                WalkState();
                 break;
-            case State.Monocular:
-                MonocularState();
+            case State.Crouch:
+                CrouchState();
+                break;
+            case State.Sprint:
+                SprintState();
                 break;
         }
 
-        if (Input.GetMouseButtonDown(1))
-        {
-            stateCurrent += 1;
-            rb.linearVelocity = new Vector3(0, 0, 0);
-        }
-
-        if (stateCurrent == State.MAX)
-        {
-            stateCurrent = 0;
-        }
     }
 
-    private void MonocularState()
-    {
-        Vector3 inputMovement = GetMovementFromInput();
-        inputMovement *= walkSpeed;
-        inputMovement.y = rb.linearVelocity.y - gravityDown * Time.deltaTime;
-
-        rb.linearVelocity = inputMovement;
-
-        walkSpeed = 1;
-    }
-
-    private void FirstState()
+    private void WalkState()
     {
         Vector3 inputMovement = GetMovementFromInput();
         inputMovement *= walkSpeed;
@@ -82,6 +65,34 @@ public class StateMachineMovement : MonoBehaviour
 
         walkSpeed = 5;
 
+        if (Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            stateCurrent = State.Crouch;
+        }
+
+    }
+
+    private void CrouchState()
+    {
+        Vector3 inputMovement = GetMovementFromInput();
+        inputMovement *= walkSpeed;
+        inputMovement.y = rb.linearVelocity.y - gravityDown * Time.deltaTime;
+
+        rb.linearVelocity = inputMovement;
+
+        walkSpeed = 2.5f;
+    }
+
+
+    private void SprintState()
+    {
+        Vector3 inputMovement = GetMovementFromInput();
+        inputMovement *= walkSpeed;
+        inputMovement.y = rb.linearVelocity.y - gravityDown * Time.deltaTime;
+
+        rb.linearVelocity = inputMovement;
+
+        walkSpeed = 7.5f;
     }
 
     private Vector3 GetMovementFromInput()
