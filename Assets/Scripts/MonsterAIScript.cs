@@ -93,7 +93,7 @@ public class MonsterAIScript : MonoBehaviour
             if (waitTime <= 0.0f)
             {
                 Vector3 point;
-                if (RandomPoint(agent.transform.position, minRange, maxRange, out point))
+                if (RandomPoint(agent.transform.position, maxRange, out point))
                 {
                     //draws point the AI will navigate to
                     NextIdleDestination(point);
@@ -120,7 +120,7 @@ public class MonsterAIScript : MonoBehaviour
                 {
                     //finds a new point and immediately heads towards it
                     Vector3 point;
-                    if (RandomPoint(agent.transform.position, minRange, maxRange, out point))
+                    if (RandomPoint(agent.transform.position, maxRange, out point))
                     {
                         //draws point the AI will navigate to
                         NextIdleDestination(point);
@@ -130,6 +130,7 @@ public class MonsterAIScript : MonoBehaviour
                 else if (chance > 0.5f)
                 {
                     //the ai is done wandering and will Idle
+                    agent.ResetPath();
                     state = State.Still;
                 }
             }
@@ -187,9 +188,8 @@ public class MonsterAIScript : MonoBehaviour
         }
     }
 
-    bool RandomPoint(Vector3 center, float minRadius, float maxRadius, out Vector3 result)
+    bool RandomPoint(Vector3 center, float distance, out Vector3 result)
     {
-        float distance = Random.Range(minRadius, maxRadius);
         Vector3 randompoint = center + Random.insideUnitSphere * distance; //random point in a sphere
         NavMeshHit hit;
         if (NavMesh.SamplePosition(randompoint, out hit, Random.Range(minRange, maxRange), NavMesh.AllAreas)) //Ddocumentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
