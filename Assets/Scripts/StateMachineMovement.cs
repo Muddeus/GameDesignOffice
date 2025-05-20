@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -17,6 +18,11 @@ public class StateMachineMovement : MonoBehaviour
     [SerializeField] private float gravityUp, gravityDown;
     [SerializeField] private LayerMask groundMask;
     [SerializeField] Transform camTrans;
+    [SerializeField] Transform playerTrans;
+    [SerializeField] CapsuleCollider playerCol;
+    [SerializeField] GameObject SprintImage;
+    [SerializeField] GameObject CrouchImage;
+    [SerializeField] GameObject WalkImage;
 
     private Rigidbody rb;
     private CapsuleCollider capsuleCollider;
@@ -53,6 +59,16 @@ public class StateMachineMovement : MonoBehaviour
                 break;
         }
 
+        /*
+        if (stateCurrent == State.Walk)
+        {
+            
+        }
+        else
+        {
+            WalkImage.active = false;
+        }
+        */
     }
 
     private void WalkState()
@@ -65,11 +81,17 @@ public class StateMachineMovement : MonoBehaviour
 
         walkSpeed = 5;
 
+        playerCol.height = 2;
+
         if (Input.GetKeyDown(KeyCode.LeftControl))
         {
             stateCurrent = State.Crouch;
         }
-
+        
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            stateCurrent = State.Sprint;
+        }
     }
 
     private void CrouchState()
@@ -80,7 +102,16 @@ public class StateMachineMovement : MonoBehaviour
 
         rb.linearVelocity = inputMovement;
 
+        //playerTrans.transform.position.y - 0.5f;
+
         walkSpeed = 2.5f;
+
+        playerCol.height = 0.8f;
+
+        if (Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            stateCurrent = State.Walk;
+        }
     }
 
 
@@ -92,7 +123,12 @@ public class StateMachineMovement : MonoBehaviour
 
         rb.linearVelocity = inputMovement;
 
-        walkSpeed = 7.5f;
+        walkSpeed = 9f;
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            stateCurrent = State.Walk;
+        }
     }
 
     private Vector3 GetMovementFromInput()
@@ -107,8 +143,6 @@ public class StateMachineMovement : MonoBehaviour
         //translate direction from world ot local
         moveDirection = transform.TransformDirection(moveDirection);
 
-
         return moveDirection;
     }
-
 }
