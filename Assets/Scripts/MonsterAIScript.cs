@@ -285,9 +285,13 @@ public class MonsterAIScript : MonoBehaviour
 
     bool RandomPoint(Vector3 center, float distance, out Vector3 result)
     {
-        Vector3 randompoint = center + Random.insideUnitSphere * distance; //random point in a sphere
+        Vector2 randompoint = Random.insideUnitCircle * (maxRange - minRange);
+        randompoint += randompoint.normalized * minRange;
+
+
+        //Vector3 randompoint = center + Random.insideUnitSphere *  distance; //random point in a circle
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(randompoint, out hit, Random.Range(minRange, maxRange), NavMesh.AllAreas)) //Ddocumentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
+        if (NavMesh.SamplePosition(center + new Vector3(randompoint.x, 0f, randompoint.y), out hit, maxRange, NavMesh.AllAreas)) //Ddocumentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
         {
             result = hit.position;
             return true;
