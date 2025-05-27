@@ -706,18 +706,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 2095226189}
-  wanderSpeed: 0
-  runSpeed: 3
-  maxRememberTime: 0
-  maxAlertTime: 0
+  wanderSpeed: 2
+  runSpeed: 4
+  maxRememberTime: 4
+  maxAlertTime: 6
   state: 0
   wanderCentrePoint: {fileID: 795509215}
   minRange: 4
-  maxRange: 12
+  maxRange: 8
   minWaitTime: 2
   maxWaitTime: 3
-  alertDistance: 2
-  chaseDistance: 2
+  alertDistance: 12
+  chaseDistance: 12
   tooCloseDistance: 0
   attackDistance: 0
 --- !u!195 &795509211
