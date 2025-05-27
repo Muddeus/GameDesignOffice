@@ -7,26 +7,21 @@ using UnityEngine.AI;
 
 public class MonsterAIScript : MonoBehaviour
 {
-    [Tooltip("Speed value for the ai")]
-    [SerializeField] private float stalkSpeed, moveSpeed, runSpeed;
+    //The player gameobject
+    [SerializeField] private GameObject player;
 
-    //The object the ai uses to track the player
-    [SerializeField] GameObject player;
+    //The speed for the ai when wandering and running
+    [SerializeField] private float wanderSpeed, runSpeed;
 
-    private NavMeshAgent agent;
+    [Tooltip("the max amount of time the mob will be interested in the player even when it's no longer being observed")]
+    [SerializeField] private float maxRememberTime;
 
-    //The state of the monster
-    [SerializeField] private State state = State.Still;
-    [Tooltip("The current ai state of the enemy")]
-    private enum State
-    {
-        Still,
-        Wandering,
-        Stalking,
-        Hiding,
-        Chase,
-        Jumpscare
-    };
+    [Tooltip("The amount of time the ai will remain alerted after spotting the player")]
+    [SerializeField] private float maxAlertTime;
+
+    //What the current ai is determining to do
+    [Tooltip("Keeps track of what the current state is")]
+    [SerializeField] public State state;
 
     [Tooltip("the centrepoint from where the calulation of where to move next will occur")]
     [SerializeField] private Transform wanderCentrePoint;
@@ -37,17 +32,37 @@ public class MonsterAIScript : MonoBehaviour
     [Tooltip("The range of time the ai will take before moving again")]
     [SerializeField] private float minWaitTime, maxWaitTime;
 
-    [Tooltip("The range the ai will react to the player")]
-    [SerializeField] private float alertDistance, chaseDistance;
+    [Tooltip("The distance the ai will react to the player")]
+    [SerializeField] private float alertDistance, chaseDistance, tooCloseDistance, attackDistance;
+    [Tooltip("The current ai state of the enemy")]
 
+    private Vector3 oldDestination;
 
+    private NavMeshAgent agent;
 
+    private Rigidbody rb;
+
+    private Vector3 ogScale;
+
+    public enum State
+    {
+        Idle,
+        Wandering,
+        Alerted,
+        Chasing,
+        Jumpscare
+    };
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        rb = GetComponent<Rigidbody>();
+
+        ogScale = transform.localScale;
+        
+        state = State.Idle;
         NextState();
     }
 
@@ -61,34 +76,39 @@ public class MonsterAIScript : MonoBehaviour
     {
         switch (state)
         {
-            case State.Still:
-                StartCoroutine(StillState());
+            case State.Idle:
+                StartCoroutine(IdleState());
                 break;
             case State.Wandering:
                 StartCoroutine(WanderingState());
                 break;
-            case State.Stalking:
-                StartCoroutine(StalkingState());
+            case State.Alerted:
+                StartCoroutine(AlertedState());
                 break;
-            case State.Hiding:
-                StartCoroutine(HidingState());
-                break;
-            case State.Chase:
-                StartCoroutine(ChaseState());
+            case State.Chasing:
+                StartCoroutine(ChasingState());
                 break;
             case State.Jumpscare:
                 StartCoroutine(JumpscareState());
                 break;
         }
     }
-    
-    IEnumerator StillState()
+
+    IEnumerator IdleState()
     {
         Debug.Log("Entering Idle State");
-        bool finishedWaiting = true;
+        //Make sure the object has no active destination while idle
+        agent.ResetPath();
+        bool finishedWaiting = false;
         float waitTime = Random.Range(minWaitTime, maxWaitTime);
-        while (state == State.Still)
+        while (state == State.Idle)
         {
+            if (CheckLOS(player, alertDistance))
+            {
+
+                finishedWaiting = true;
+                state = State.Alerted;
+            }
             waitTime -= Time.deltaTime;
             if (waitTime <= 0.0f)
             {
@@ -110,9 +130,17 @@ public class MonsterAIScript : MonoBehaviour
 
     IEnumerator WanderingState()
     {
+        Debug.Log("Entering Wandering State");
         float chance = Random.Range(0f, 1f);
+        //set the agent's speed to the wandering speed
+        agent.speed = wanderSpeed;
         while (state == State.Wandering)
         {
+            if (CheckLOS(player, alertDistance))
+            {
+                state = State.Alerted;
+                break;
+            }
             if (agent.remainingDistance <= agent.stoppingDistance) //if the agent is done with its current path...
             {
 
@@ -130,8 +158,7 @@ public class MonsterAIScript : MonoBehaviour
                 else if (chance > 0.5f)
                 {
                     //the ai is done wandering and will Idle
-                    agent.ResetPath();
-                    state = State.Still;
+                    state = State.Idle;
                 }
             }
             yield return null;
@@ -140,40 +167,108 @@ public class MonsterAIScript : MonoBehaviour
         NextState();
     }
 
-    IEnumerator StalkingState()
+    IEnumerator AlertedState()
     {
+        Debug.Log("Entering Alerted State");
+        //save the original destination before resetting it 
+        oldDestination = agent.destination; agent.ResetPath();
 
-        while (state == State.Stalking)
+        //the original alert/remember time upon entering this state
+        float ogAlertTime = maxAlertTime;
+        float ogRememberTime = maxRememberTime;
+
+        while (state == State.Alerted)
         {
+            //The distance between the player and ai
+            float distance = Vector3.Distance(agent.transform.position, player.transform.position);
 
 
+            //check if the player is still within LOS
+            if (CheckLOS(player, alertDistance))
+            {
+                //reset the remember time
+                maxRememberTime = ogRememberTime;
 
+                //check if the player is too close
+                if (distance <= tooCloseDistance)
+                {
+                    state = State.Chasing;
+                }
+                //as the player is being observed, alert time goes down
+                maxAlertTime -= Time.deltaTime;
+                if (maxAlertTime <= 0f)
+                {
+                    state = State.Chasing;
+                }
+            }
+            else
+            {
+                //as the player isn't being observed, remember time goes down
+                maxRememberTime -= Time.deltaTime;
+                maxAlertTime += Time.deltaTime / 2;
+                if (maxAlertTime >= 5f)
+                {
+                    maxAlertTime = 5f;
+                }
+
+                if (maxRememberTime <= 0f)
+                {
+                    state = State.Idle;
+                }
+            }
             yield return null;
         }
+        //reset the alert/remember time
+        maxAlertTime = ogAlertTime;
+        maxRememberTime = ogRememberTime;
+
+        Debug.Log("Exiting Alerted State");
+        NextState();
     }
 
-    IEnumerator HidingState()
+    IEnumerator ChasingState()
     {
+        Debug.Log("Entering Chasing State");
 
-        while (state == State.Hiding)
+        //Set the speed to the run speed
+        agent.speed = runSpeed;
+
+        //the original remember time
+        float ogRememberTime = maxRememberTime;
+
+        while (state == State.Chasing)
         {
+            //The distance between the ai and player
+            float distance = Vector3.Distance(agent.transform.position, player.transform.position);
+            agent.destination = player.transform.position;
 
+            //check if the player doesn't have LOS
+
+            if (!CheckLOS(player, alertDistance))
+            {
+                maxRememberTime -= Time.deltaTime;
+                if (maxRememberTime <= 0f)
+                {
+                    state = State.Alerted;
+                    break;
+                }
+            }
+            else
+            {
+                maxRememberTime = ogRememberTime;
+            }
+            if (distance <= attackDistance)
+            {
+                state = State.Jumpscare;
+                break;
+            }
 
 
             yield return null;
         }
-    }
-
-    IEnumerator ChaseState()
-    {
-
-        while (state == State.Chase)
-        {
-
-
-
-            yield return null;
-        }
+        maxRememberTime = ogRememberTime;
+        Debug.Log("Exiting Chasing State");
+        NextState();
     }
 
     IEnumerator JumpscareState()
@@ -211,6 +306,46 @@ public class MonsterAIScript : MonoBehaviour
         agent.SetDestination(point);
     }
 
+
+    public bool CheckLOS(GameObject target, float detectionRange)
+    {
+        //The position of the observer
+        Vector3 observerPosition = transform.position;
+
+        //The direction of the target
+        Vector3 direction = (target.transform.position - observerPosition).normalized;
+
+        //the distance of the raycast
+
+
+        //Check if the raycast between the two is uninterrupted
+        RaycastHit hit;
+        bool hitTarget = Physics.Raycast(observerPosition, direction, out hit, detectionRange);
+
+        //check for collisions
+        if (hitTarget)
+        {
+
+            //if there is nothing between the ai and target...
+            if (hit.collider.gameObject == target)
+            {
+                return true;
+            }
+            else
+            {
+                //LOS is blocked
+                return false;
+            }
+        }
+        else
+        {
+            //target is out of range
+            return false;
+        }
+    }
+
+
+
     private void OnDrawGizmosSelected()
     {
         if (wanderCentrePoint != null)
@@ -220,6 +355,9 @@ public class MonsterAIScript : MonoBehaviour
 
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(wanderCentrePoint.position, minRange);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(wanderCentrePoint.position, alertDistance);
         }
     }
 }

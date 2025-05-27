@@ -705,10 +705,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ae82a7a905f9e54d934c9acef577b62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stalkSpeed: 3
-  moveSpeed: 3
-  runSpeed: 3
   player: {fileID: 2095226189}
+  wanderSpeed: 0
+  runSpeed: 3
+  maxRememberTime: 0
+  maxAlertTime: 0
+  state: 0
   wanderCentrePoint: {fileID: 795509215}
   minRange: 4
   maxRange: 12
@@ -716,6 +718,8 @@ MonoBehaviour:
   maxWaitTime: 3
   alertDistance: 2
   chaseDistance: 2
+  tooCloseDistance: 0
+  attackDistance: 0
 --- !u!195 &795509211
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -821,7 +825,7 @@ Transform:
   m_GameObject: {fileID: 795509209}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.4028912, y: 0.50000095, z: -4.2883472}
+  m_LocalPosition: {x: 3.03, y: 0.50000095, z: -11.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3056,6 +3060,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   camTrans: {fileID: 330585546}
+  playerTrans: {fileID: 0}
+  playerCol: {fileID: 0}
+  SprintImage: {fileID: 0}
+  CrouchImage: {fileID: 0}
+  WalkImage: {fileID: 0}
 --- !u!54 &2095226191
 Rigidbody:
   m_ObjectHideFlags: 0

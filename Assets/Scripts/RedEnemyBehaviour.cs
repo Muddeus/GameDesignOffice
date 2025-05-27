@@ -15,11 +15,14 @@ public class RedEnemyBehaviour : MonoBehaviour
     [SerializeField] private float wanderSpeed, runSpeed;
 
     [Tooltip("the max amount of time the mob will be interested in the player even when it's no longer being observed")]
+    [SerializeField] private float maxRememberTime;
+
+    [Tooltip("The amount of time the ai will remain alerted after spotting the player")]
     [SerializeField] private float maxAlertTime;
 
     //What the current ai is determining to do
     [Tooltip("Keeps track of what the current state is")]
-    [SerializeField] private State currentState;
+    [SerializeField] public State state;
 
     [Tooltip("the centrepoint from where the calulation of where to move next will occur")]
     [SerializeField] private Transform wanderCentrePoint;
@@ -30,11 +33,16 @@ public class RedEnemyBehaviour : MonoBehaviour
     [Tooltip("The range of time the ai will take before moving again")]
     [SerializeField] private float minWaitTime, maxWaitTime;
 
-    [Tooltip("The range the ai will react to the player")]
-    [SerializeField] private float alertDistance, chaseDistance;
+    [Tooltip("The distance the ai will react to the player")]
+    [SerializeField] private float alertDistance, chaseDistance, tooCloseDistance, attackDistance;
 
+    private Vector3 oldDestination;
+
+
+    public bool isBeingCaptured { get; set; }
+    private float timer = 1;
     private Vector3 originalScale;
-    private enum State
+    public enum State
     {
         Idle,
         Wandering,
@@ -58,7 +66,7 @@ public class RedEnemyBehaviour : MonoBehaviour
         originalScale = transform.localScale;
 
         //starts the ai in an idle state
-        currentState = State.Idle;
+        state = State.Idle;
         NextState();
     }
 
@@ -70,7 +78,7 @@ public class RedEnemyBehaviour : MonoBehaviour
 
     void NextState()
     {
-        switch (currentState)
+        switch (state)
         {
             case State.Idle:
                 StartCoroutine(IdleState());
@@ -93,21 +101,29 @@ public class RedEnemyBehaviour : MonoBehaviour
     IEnumerator IdleState()
     {
         Debug.Log("Entering Idle State");
-        bool finishedWaiting = true;
+        //Make sure the object has no active destination while idle
+        agent.ResetPath();
+        bool finishedWaiting = false;
         float waitTime = Random.Range(minWaitTime, maxWaitTime);
-        while (currentState == State.Idle)
+        while (state == State.Idle)
         {
+            if (CheckLOS(player, alertDistance))
+            {
+
+                finishedWaiting = true;
+                state = State.Alerted;
+            }
             waitTime -= Time.deltaTime;
             if (waitTime <= 0.0f)
             {
                 Vector3 point;
-                if (RandomPoint(agent.transform.position, minRange, maxRange, out point)) 
+                if (RandomPoint(agent.transform.position, maxRange, out point))
                 {
                     //draws point the AI will navigate to
                     NextIdleDestination(point);
                     //sets the state to wandering
                     finishedWaiting = true;
-                    currentState = State.Wandering;
+                    state = State.Wandering;
                 }
             }
             yield return null; //waits for a frame
@@ -118,9 +134,17 @@ public class RedEnemyBehaviour : MonoBehaviour
 
     IEnumerator WanderingState()
     {
+        Debug.Log("Entering Wandering State");
         float chance = Random.Range(0f, 1f);
-        while (currentState == State.Wandering)
+        //set the agent's speed to the wandering speed
+        agent.speed = wanderSpeed;
+        while (state == State.Wandering)
         {
+            if (CheckLOS(player, alertDistance))
+            {
+                state = State.Alerted;
+                break;
+            }
             if (agent.remainingDistance <= agent.stoppingDistance) //if the agent is done with its current path...
             {
 
@@ -128,7 +152,7 @@ public class RedEnemyBehaviour : MonoBehaviour
                 {
                     //finds a new point and immediately heads towards it
                     Vector3 point;
-                    if (RandomPoint(agent.transform.position, minRange, maxRange, out point))
+                    if (RandomPoint(agent.transform.position, maxRange, out point))
                     {
                         //draws point the AI will navigate to
                         NextIdleDestination(point);
@@ -138,7 +162,7 @@ public class RedEnemyBehaviour : MonoBehaviour
                 else if (chance > 0.5f)
                 {
                     //the ai is done wandering and will Idle
-                    currentState = State.Idle;
+                    state = State.Idle;
                 }
             }
             yield return null;
@@ -149,38 +173,129 @@ public class RedEnemyBehaviour : MonoBehaviour
 
     IEnumerator AlertedState()
     {
+        Debug.Log("Entering Alerted State");
+        //save the original destination before resetting it 
+        oldDestination = agent.destination; agent.ResetPath();
 
-        while (currentState == State.Alerted)
+        //the original alert/remember time upon entering this state
+        float ogAlertTime = maxAlertTime;
+        float ogRememberTime = maxRememberTime;
+
+        while (state == State.Alerted)
         {
+            //The distance between the player and ai
+            float distance = Vector3.Distance(agent.transform.position, player.transform.position);
 
+
+            //check if the player is still within LOS
+            if (CheckLOS(player, alertDistance))
+            {
+                //reset the remember time
+                maxRememberTime = ogRememberTime;
+
+                //check if the player is too close
+                if (distance <= tooCloseDistance)
+                {
+                    state = State.Chasing;
+                }
+                //as the player is being observed, alert time goes down
+                maxAlertTime -= Time.deltaTime;
+                if (maxAlertTime <= 0f)
+                {
+                    state = State.Chasing;
+                }
+            }
+            else
+            {
+                //as the player isn't being observed, remember time goes down
+                maxRememberTime -= Time.deltaTime;
+                maxAlertTime += Time.deltaTime / 2;
+                if (maxAlertTime >= 5f)
+                {
+                    maxAlertTime = 5f;
+                }
+
+                if (maxRememberTime <= 0f)
+                {
+                    state = State.Idle;
+                }
+            }
             yield return null;
         }
+        //reset the alert/remember time
+        maxAlertTime = ogAlertTime;
+        maxRememberTime = ogRememberTime;
+
+        Debug.Log("Exiting Alerted State");
+        NextState();
     }
 
     IEnumerator ChasingState()
     {
-        while (currentState == State.Chasing)
+        Debug.Log("Entering Chasing State");
+
+        //Set the speed to the run speed
+        agent.speed = runSpeed;
+
+        //the original remember time
+        float ogRememberTime = maxRememberTime;
+
+        while (state == State.Chasing)
         {
+            //The distance between the ai and player
+            float distance = Vector3.Distance(agent.transform.position, player.transform.position);
+            agent.destination = player.transform.position;
+
+            //check if the player doesn't have LOS
+
+            if (!CheckLOS(player, alertDistance))
+            {
+                maxRememberTime -= Time.deltaTime;
+                if (maxRememberTime <= 0f)
+                {
+                    state = State.Alerted;
+                    break;
+                }
+            }
+            else
+            {
+                maxRememberTime = ogRememberTime;
+            }
+            if (distance <= attackDistance)
+            {
+                state = State.Attack;
+                break;
+            }
+
 
             yield return null;
         }
+        maxRememberTime = ogRememberTime;
+        Debug.Log("Exiting Chasing State");
+        NextState();
     }
 
     IEnumerator AttackState()
     {
-        while (currentState == State.Attack)
+
+
+        while (state == State.Attack)
         {
+
 
             yield return null;
         }
     }
 
-    bool RandomPoint(Vector3 center, float minRadius, float maxRadius, out Vector3 result)
+    bool RandomPoint(Vector3 center, float distance, out Vector3 result)
     {
-        float distance = Random.Range(minRadius, maxRadius);
-        Vector3 randompoint = center + Random.insideUnitSphere *  distance; //random point in a sphere
+        Vector2 randompoint = Random.insideUnitCircle * (maxRange - minRange);
+        randompoint += randompoint.normalized * minRange;
+
+
+        //Vector3 randompoint = center + Random.insideUnitSphere *  distance; //random point in a sphere
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(randompoint, out hit, Random.Range(minRange, maxRange), NavMesh.AllAreas)) //Ddocumentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
+        if (NavMesh.SamplePosition(center + new Vector3(randompoint.x, 0f, randompoint.y), out hit, maxRange, NavMesh.AllAreas)) //Ddocumentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
         {
             result = hit.position;
             return true;
@@ -189,11 +304,6 @@ public class RedEnemyBehaviour : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    ///  Chooses a new idle destination
-    /// </summary>
-    /// <param name="point"></param>
-    /// 
     private void NextIdleDestination(Vector3 point)
     {
         //draws point the AI will navigate to
@@ -210,21 +320,46 @@ public class RedEnemyBehaviour : MonoBehaviour
 
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(wanderCentrePoint.position, minRange);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(wanderCentrePoint.position, alertDistance);
         }
     }
 
-    //Search up Capela Games on github to find the other scripts
-
-
-    /// <summary>
-    /// Adds two integers together.
-    /// </summary>
-    /// <param name="num1">The first integer.</param>
-    /// <param name="num2">The second integer.</param>
-    /// <returns>The sum of num1 and num2.</returns>
-    /// <exception cref="System.ArgumentException">Thrown when num1 or num2 is null.</exception>
-    public static int Add(int num1, int num2)
+    public bool CheckLOS(GameObject target, float detectionRange)
     {
-        return num1 + num2;
+        //The position of the observer
+        Vector3 observerPosition = transform.position;
+
+        //The direction of the target
+        Vector3 direction = (target.transform.position - observerPosition).normalized;
+
+        //the distance of the raycast
+
+
+        //Check if the raycast between the two is uninterrupted
+        RaycastHit hit;
+        bool hitTarget = Physics.Raycast(observerPosition, direction, out hit, detectionRange);
+
+        //check for collisions
+        if (hitTarget)
+        {
+
+            //if there is nothing between the ai and target...
+            if (hit.collider.gameObject == target)
+            {
+                return true;
+            }
+            else
+            {
+                //LOS is blocked
+                return false;
+            }
+        }
+        else
+        {
+            //target is out of range
+            return false;
+        }
     }
 }
