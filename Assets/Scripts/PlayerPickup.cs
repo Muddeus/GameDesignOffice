@@ -2,21 +2,26 @@ using UnityEngine;
 
 public class PlayerPickup : MonoBehaviour
 {
-    //The distance from which the player can reach the pickup object
-    [SerializeField] private float pickupDistance;
+    public GameObject pickupText;
+    public GameObject keyCardOnPlayer;
 
-    //how long it takes to pickup the item
-    [SerializeField] private float pickupTime = 1f;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
-        
+        keyCardOnPlayer.SetActive(false);
+        pickupText.SetActive(false);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnTriggerStay(Collider other)
     {
-        
+        if (other.gameObject.tag == "Player")
+        {
+            pickupText.SetActive(true);
+            if (Input.GetKey(KeyCode.E))
+            {
+                this.gameObject.SetActive(false);
+
+                keyCardOnPlayer.SetActive(false);
+            }
+        }
     }
 }

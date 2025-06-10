@@ -4,9 +4,15 @@ using UnityEngine;
 
 public class LookAtTarget : MonoBehaviour
 {
-    public Transform lookAtTargetTransform;
+    private Camera targetCamera;
+    [Tooltip("The name of the target camera")]
+    [SerializeField] string cameraName;
+    private void Start()
+    {
+        targetCamera = GameObject.Find(cameraName)?.GetComponent<Camera>();
+    }
     private void Update()
     {
-        transform.LookAt(lookAtTargetTransform);
+        transform.LookAt(targetCamera.transform);
     }
 }
