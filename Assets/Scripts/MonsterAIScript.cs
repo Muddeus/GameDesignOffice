@@ -124,7 +124,6 @@ public class MonsterAIScript : MonoBehaviour
             }
             yield return null; //waits for a frame
         }
-        Debug.Log("Exiting Idle State");
         NextState();
     }
 
@@ -163,7 +162,6 @@ public class MonsterAIScript : MonoBehaviour
             }
             yield return null;
         }
-        Debug.Log("Exiting Wandering State");
         NextState();
     }
 
@@ -222,7 +220,6 @@ public class MonsterAIScript : MonoBehaviour
         maxAlertTime = ogAlertTime;
         maxRememberTime = ogRememberTime;
 
-        Debug.Log("Exiting Alerted State");
         NextState();
     }
 
@@ -267,12 +264,12 @@ public class MonsterAIScript : MonoBehaviour
             yield return null;
         }
         maxRememberTime = ogRememberTime;
-        Debug.Log("Exiting Chasing State");
         NextState();
     }
 
     IEnumerator JumpscareState()
     {
+        Debug.Log("Entering Jumpscare State");
 
         while (state == State.Jumpscare)
         {
@@ -281,6 +278,7 @@ public class MonsterAIScript : MonoBehaviour
 
             yield return null;
         }
+        NextState();
     }
 
     bool RandomPoint(Vector3 center, float distance, out Vector3 result)
