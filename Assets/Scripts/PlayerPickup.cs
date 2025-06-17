@@ -21,7 +21,16 @@ public class PlayerPickup : MonoBehaviour
                 this.gameObject.SetActive(false);
 
                 keyCardOnPlayer.SetActive(false);
+
+                KeycardTracker.haveKeycard = true;
             }
+        }
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            pickupText.SetActive(false);
         }
     }
 }
