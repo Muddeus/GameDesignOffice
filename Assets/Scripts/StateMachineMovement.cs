@@ -26,7 +26,7 @@ public class StateMachineMovement : MonoBehaviour
 
     private Rigidbody rb;
     private CapsuleCollider capsuleCollider;
-   
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -59,16 +59,6 @@ public class StateMachineMovement : MonoBehaviour
                 break;
         }
 
-        /*
-        if (stateCurrent == State.Walk)
-        {
-            
-        }
-        else
-        {
-            WalkImage.active = false;
-        }
-        */
     }
 
     private void WalkState()
@@ -87,11 +77,19 @@ public class StateMachineMovement : MonoBehaviour
         {
             stateCurrent = State.Crouch;
         }
-        
+
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             stateCurrent = State.Sprint;
         }
+
+        if (WalkImage.active == false)
+        {
+            WalkImage.active = true;
+            CrouchImage.active = false;
+            SprintImage.active = false;
+        }
+
     }
 
     private void CrouchState()
@@ -112,6 +110,13 @@ public class StateMachineMovement : MonoBehaviour
         {
             stateCurrent = State.Walk;
         }
+
+        if (CrouchImage.active == false)
+        {
+            WalkImage.active = false;
+            CrouchImage.active = true;
+            SprintImage.active = false;
+        }
     }
 
 
@@ -128,6 +133,13 @@ public class StateMachineMovement : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             stateCurrent = State.Walk;
+        }
+
+        if (SprintImage.active == false)
+        {
+            WalkImage.active = false;
+            CrouchImage.active = false;
+            SprintImage.active = true;
         }
     }
 
