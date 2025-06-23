@@ -138,10 +138,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5169578811043067064, guid: 210b88b97eadf5b4784d8213c05d75bf, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: be8dfb78dc06f464687c34601ea4a718, type: 2}
+    - target: {fileID: -1594759221229875694, guid: 210b88b97eadf5b4784d8213c05d75bf, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6aaec98d3761e894ea166703d26ba12f, type: 2}
     - target: {fileID: 919132149155446097, guid: 210b88b97eadf5b4784d8213c05d75bf, type: 3}
       propertyPath: m_Name
       value: Desk
       objectReference: {fileID: 0}
+    - target: {fileID: 3757724274799010451, guid: 210b88b97eadf5b4784d8213c05d75bf, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6aaec98d3761e894ea166703d26ba12f, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

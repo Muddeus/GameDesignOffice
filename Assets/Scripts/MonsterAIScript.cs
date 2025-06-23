@@ -49,8 +49,7 @@ public class MonsterAIScript : MonoBehaviour
         Idle,
         Wandering,
         Alerted,
-        Chasing,
-        Jumpscare
+        Chasing
     };
 
 
@@ -87,9 +86,6 @@ public class MonsterAIScript : MonoBehaviour
                 break;
             case State.Chasing:
                 StartCoroutine(ChasingState());
-                break;
-            case State.Jumpscare:
-                StartCoroutine(JumpscareState());
                 break;
         }
     }
@@ -254,30 +250,10 @@ public class MonsterAIScript : MonoBehaviour
             {
                 maxRememberTime = ogRememberTime;
             }
-            if (distance <= attackDistance)
-            {
-                state = State.Jumpscare;
-                break;
-            }
-
 
             yield return null;
         }
         maxRememberTime = ogRememberTime;
-        NextState();
-    }
-
-    IEnumerator JumpscareState()
-    {
-        Debug.Log("Entering Jumpscare State");
-
-        while (state == State.Jumpscare)
-        {
-
-
-
-            yield return null;
-        }
         NextState();
     }
 

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-8581328367045613836
+--- !u!114 &-6433466262149253052
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Monitor
+  m_Name: M_KBM
   m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -130,8 +130,8 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
-    - _Color: {r: 0.49056596, g: 0.49056596, b: 0.49056596, a: 1}
+    - _BaseColor: {r: 0.21698111, g: 0.21698111, b: 0.21698111, a: 1}
+    - _Color: {r: 0.21698105, g: 0.21698105, b: 0.21698105, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
